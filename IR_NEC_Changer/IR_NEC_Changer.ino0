@@ -1,0 +1,251 @@
+// IR NEC Changer for remote control
+// Beta
+
+
+//------------------------ INCLUDES ------------------------
+#include <string.h>
+#include <stdlib.h>
+#include "TinyI2CMaster.h"
+#include "SoftwareUart.h"
+#include "NecDecoder.h"
+#include "NecEncoder.h"
+#include "Font.h"
+#include "IR_map.h"
+
+//------------------------ DEFINES ------------------------
+#define I2C_READ 1
+#define I2C_WRITE 0
+
+#define TX_PIN  4
+
+#define REG_CONFIG              0x00
+#define REG_COLUMN_DATA         0x01
+#define REG_UPDATE_COLUMN       0x0C
+#define REG_LIGHTING_EFFECT     0x0D
+#define REG_AUDIO_EQUALIZER     0x0F
+
+//------------------------ VARIABLES ------------------------
+enum mods {
+  none,
+  dvd,
+  stereo,
+  aux1,
+  aux2
+};
+
+enum sound_ch {
+  none3,
+  ch2_1,
+  ch5_1
+};
+
+enum mods_var {
+  none1,
+  volume,
+  bass,
+  treb,
+  front,
+  cent,
+  rear,
+  sub,
+  number,
+  mem_volume,
+  mem_bass,
+  mem_treb,
+  mem_front,
+  mem_cent,
+  mem_rear,
+  mem_sub
+};
+
+uint8_t matrix_buffer[13] = {0,0,0,0,0,0,0,0,0,0,0,0,0};
+char str_buf[20]; //20   DEBUG
+
+uint32_t t0 = 0;
+uint32_t t1 = 0;
+int8_t cnt = 0;
+
+uint8_t mode = stereo;
+
+NecDecoder ir;
+SoftwareUart <TX_PIN> uart;
+
+
+void ir_Isr() {
+    ir.tick();
+}
+
+//------------------------ MATRIX FUNCTIONS ------------------------
+
+void matrix_write_reg(uint8_t address, uint8_t data) {
+    TinyI2C.start(0x60, I2C_WRITE);
+    TinyI2C.write(address);
+    TinyI2C.write(data);
+    TinyI2C.stop();
+}
+
+void matrix_clear() {
+    TinyI2C.start(0x60, I2C_WRITE);
+    for(uint8_t i = 0; i < 8; i++) {
+        TinyI2C.write(REG_COLUMN_DATA + i);
+        TinyI2C.write(0x00);
+    }
+    TinyI2C.write(REG_UPDATE_COLUMN);
+    TinyI2C.write(0xFF);
+    TinyI2C.stop();
+}
+
+void matrix_write_bitmap(const uint8_t *data) {
+    TinyI2C.start(0x60, I2C_WRITE);
+    for(uint8_t i = 0; i < 8; i++) {
+        TinyI2C.write(REG_COLUMN_DATA + (7 - i));
+        TinyI2C.write(data[i]);
+    }
+    TinyI2C.write(REG_UPDATE_COLUMN);
+    TinyI2C.write(0xFF);
+    TinyI2C.stop();
+}
+
+void matrix_print_two_digits(int8_t num) {
+    if(num >= 100) return;
+    if(num <= -100) return;
+    uint8_t zero_flag = 0;
+    uint8_t units = 0;
+    uint8_t decades = 0;
+    if (num < 0) {
+        num = -num;
+        zero_flag = 1;
+    }
+    while(num > 9) {
+        num -= 10;
+        decades++;
+    }
+    units = num;
+    matrix_buffer[0] = matrix_buffer[4] = 0; // add spacer
+    uint8_t font_offset_dec = decades * FONT_3x5_WIDTH;
+    uint8_t font_offset_unit = units * FONT_3x5_WIDTH;
+    for(uint8_t i = 0; i < 3; i++) {
+        matrix_buffer[1 + i] = pgm_read_byte(&font3x5_digital[font_offset_dec + i]);
+        matrix_buffer[5 + i] = pgm_read_byte(&font3x5_digital[font_offset_unit + i]);
+    }
+    if(zero_flag) {
+        matrix_buffer[2] |= 1; matrix_buffer[3] |= 1;
+        matrix_buffer[4] |= 1; matrix_buffer[5] |= 1;
+        matrix_buffer[6] |= 1;
+    }
+    matrix_write_bitmap(matrix_buffer);
+}
+
+void matrix_print_str(const char *str, uint8_t len, uint8_t shift) {
+    uint8_t char_start = shift / 6;
+    uint8_t char_offset = shift - 6 * char_start;
+    uint16_t font_offset = 0;
+    matrix_buffer[0] = matrix_buffer[6] = 0; // add spacer
+    if(char_start < len) {
+        font_offset = (str[char_start] - FIRST_CHAR_OFFSET) * FONT_5x7_WIDTH;
+        for(uint8_t i = 0; i < 5; i++) { // first char
+            matrix_buffer[1 + i] = pgm_read_byte(&Font5x7[font_offset + i]);
+        }
+    }
+    if(char_start + 1 < len) {
+        font_offset = (str[char_start + 1] - FIRST_CHAR_OFFSET) * FONT_5x7_WIDTH;
+        for(uint8_t i = 0; i < 5; i++) { // second char
+            matrix_buffer[7 + i] = pgm_read_byte(&Font5x7[font_offset + i]);
+        }
+    }
+    else {
+        for(uint8_t i = 0; i < 5; i++) { // space
+            matrix_buffer[7 + i] = 0x00;
+        }
+    }
+    TinyI2C.start(0x60, I2C_WRITE);
+    for(uint8_t i = 0; i < 8; i++) {
+        TinyI2C.write(REG_COLUMN_DATA + (7 - i));
+        TinyI2C.write(matrix_buffer[char_offset + i]);
+    }
+    TinyI2C.write(REG_UPDATE_COLUMN);
+    TinyI2C.write(0xFF);
+    TinyI2C.stop();
+}
+
+
+void setup() {
+    pinMode(LED_BUILTIN, OUTPUT);
+    attachInterrupt(1, ir_Isr, FALLING);
+    TinyI2C.init();
+    matrix_write_reg(REG_LIGHTING_EFFECT, 0b00001000); // 0 [NC]; 000 [Audio Gain Selection] - off; 1000 [Current Setting] - 5mA
+    matrix_clear();
+	matrix_print_two_digits(cnt);
+}
+
+void loop() {
+    if(ir.isDecoded()) {
+        //sprintf(str_buf, "ADR:0x%02X CMD:0x%02X\r", ir.readAddress(), ir.readCommand());
+        sprintf(str_buf, "0x%04X%04X\r", (uint16_t)(ir.readPacket() >> 16 & 0xFFFF), (uint16_t)(ir.readPacket() & 0xFFFF));
+        uart.printStr(str_buf);
+        if(ir.readCommand() == 0x62) cnt++;
+        if(ir.readCommand() == 0x68) cnt--;
+        matrix_print_two_digits(cnt);
+        if(ir.readCommand() == 0xAA) {
+            uint8_t shift = 0;
+            while(1) {
+                matrix_print_str(" Mem OK", 7, shift++);
+                delay(50);
+                if(shift == 6*7) {
+                    matrix_clear();
+                    return;
+                }
+            }
+        }
+    }
+    if (ir.isRepeated()) {
+        //sprintf(str_buf, "CMD:0x%02X REP\r", ir.readCommand());
+        //uart.printStr(str_buf);
+        if(ir.readCommand() == 0x62) cnt++;
+        if(ir.readCommand() == 0x68) cnt--;
+        matrix_print_two_digits(cnt);
+    }
+}
+
+
+
+
+
+
+/*
+    sprintf(str_buf, " %02X", ir.readCommand());
+    while(1) {
+        matrix_print_str(str_buf, 3, cnt++);
+        delay(50);
+        if(cnt == 3 * 6) {
+            cnt = 0;
+            matrix_clear();
+            return;
+        }
+    }
+    */
+
+    /*
+    //itoa((int)ir.readCommand(), str_buf, HEX);
+    //char str_temp[6] = " 0x\0\0";
+    //strcat(str_temp, str_buf);
+    //uint8_t char_cnt = strlen(str_buf);
+    */
+
+    /*
+    char buf_g[strlen_P(abcde)];
+    strcpy_P(buf_g, abcde);
+    matrix_print_str(buf_g, 6, cnt++);
+    delay(100);
+    if(cnt == 6 * 6) cnt = 0;
+    if(cnt >= 36) digitalWrite(LED_BUILTIN, HIGH);
+    matrix_clear();
+    */
+
+    //CRC = matrix_buffer[0] + matrix_buffer[1] + matrix_buffer[2] + matrix_buffer[3] + matrix_buffer[4] + matrix_buffer[5] + matrix_buffer[6] + matrix_buffer[7] + matrix_buffer[8] + matrix_buffer[9] + matrix_buffer[10] + matrix_buffer[11] + matrix_buffer[12];
+    //if(CRC == 0x2B3) blink_medium();
+    //delay(200);
+    //matrix_print_str(str, 5, 12);
+    //CRC = matrix_buffer[0] + matrix_buffer[1] + matrix_buffer[2] + matrix_buffer[3] + matrix_buffer[4] + matrix_buffer[5] + matrix_buffer[6] + matrix_buffer[7] + matrix_buffer[8] + matrix_buffer[9] + matrix_buffer[10] + matrix_buffer[11] + matrix_buffer[12];
+    //if(CRC == 0x262) blink_long();
+    //delay(200);
