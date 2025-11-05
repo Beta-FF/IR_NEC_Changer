@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "NecDecoder.h"
 /*
     NEC пакет: 32 бита, 4 блока по 8 бит, LSB<-MSB
@@ -13,7 +14,7 @@ void NecDecoder::tick(void) {
         if (time > _NEC_LOW_MIN && time < _NEC_LOW_MAX) mode = 0;           // LOW бит
         else if (time > _NEC_HIGH_MIN && time < _NEC_HIGH_MAX) mode = 1;    // HIGH бит
         if (mode != 2) {                            // HIGH или LOW
-            _buffer = _buffer << 1 | mode;          // пишем в буфер     
+            _buffer = (_buffer >> 1) | ((uint32_t)mode << 31);          // пишем в буфер     
             if (mode) _parity = !_parity;           // чётность
             if (++_counter == 32) {                 // если приняли 32 бита
                 if (_parity) return;                // чётность не совпала - пакет битый
@@ -61,19 +62,19 @@ uint32_t NecDecoder::readPacket() {
 }
 
 uint8_t NecDecoder::readAddress() {
-    return ((uint32_t)_packet >> 24);
-}
-
-uint8_t NecDecoder::readCommand() {
-    return ((uint32_t)_packet >> 8 & 0xFF);
-}
-
-uint8_t NecDecoder::readInvCommand() {
     return ((uint32_t)_packet & 0xFF);
 }
 
 uint8_t NecDecoder::readInvAddress() {
+    return ((uint32_t)_packet >> 8 & 0xFF);
+}
+
+uint8_t NecDecoder::readCommand() {
     return ((uint32_t)_packet >> 16 & 0xFF);
+}
+
+uint8_t NecDecoder::readInvCommand() {
+    return ((uint32_t)_packet >> 24 & 0xFF);
 }
 
 bool NecDecoder::addressIsValid() {

@@ -334,16 +334,14 @@ void power_on() {
 	delay(tx_delay);
 
     uint8_t cmnd_cnt = 10;
-    while(cmnd_cnt) { // volume preset
+    while(cmnd_cnt--) { // volume preset
         irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_VOL_P);
         delay(tx_delay);
-        cmnd_cnt--;
     }
     cmnd_cnt = 4;
-    while(cmnd_cnt) { // sub preset
+    while(cmnd_cnt--) { // sub preset
         irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_SW_M);
         delay(tx_delay);
-        cmnd_cnt--;
     }
 }
 

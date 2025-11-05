@@ -34,7 +34,7 @@ public:
         pulse_noModulation(9000);//pulse38(9000);
         delayMicroseconds(4500);
         sendData_noModulation(addr & 0xFF);
-        sendData_noModulation(addr >> 8 & 0xFF);
+        sendData_noModulation((addr >> 8) & 0xFF);
         sendData_noModulation(cmd);
         sendData_noModulation(~cmd);
         pulse_noModulation(562);
@@ -80,9 +80,9 @@ private:
         int i = 8;
         while (i--) {
             pulse_noModulation(562);
-            if (data & 0x80) delayMicroseconds(1687);
+            if (data & 0x01) delayMicroseconds(1687);
             else delayMicroseconds(562);
-            data <<= 1;
+            data >>= 1;
         }
     }
     

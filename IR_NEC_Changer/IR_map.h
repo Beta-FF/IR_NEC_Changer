@@ -1,3 +1,4 @@
+/*
 #define MP3_PWR     0xA2
 #define MP3_MODE    0x62
 #define MP3_MUTE    0xE2
@@ -19,7 +20,8 @@
 #define MP3_7       0x42
 #define MP3_8       0x4a
 #define MP3_9       0x52
-/*
+*/
+
 #define MP3_PWR     0x45
 #define MP3_MODE    0x46
 #define MP3_MUTE    0x47
@@ -36,12 +38,12 @@
 #define MP3_2       0x18
 #define MP3_3       0x5E
 #define MP3_4       0x08
-#define MP3_5       0x16
+#define MP3_5       0x1C
 #define MP3_6       0x5A
 #define MP3_7       0x42
 #define MP3_8       0x52
 #define MP3_9       0x4A
-*/
+
 #define SUB_RST     0x57    // мусор
 #define SUB_DVD     0x4D
 #define SUB_STEREO  0x4F
