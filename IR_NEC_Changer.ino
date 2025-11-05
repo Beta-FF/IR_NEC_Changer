@@ -226,7 +226,7 @@ uint8_t ch_handler()
 void handler_ir_command()
 {
     if(irrx.readAddress() != IR_MP3_ADDR) return;
-    delay(100);
+    delay(5);
     switch (irrx.readCommand()) {
         case MP3_PWR:   
             irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_PWR);

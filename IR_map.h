@@ -44,12 +44,12 @@
 #define MP3_8       0x52
 #define MP3_9       0x4A
 
-#define SUB_RST     0x57    // мусор
+#define SUB_RST     0x57
 #define SUB_DVD     0x4D
 #define SUB_STEREO  0x4F
 #define SUB_AUX1    0x49
 #define SUB_AUX2    0x4B
-#define SUB_3D      0x1D    // мусор
+#define SUB_3D      0x1D
 #define SUB_51CH    0x47
 #define SUB_21CH    0x45
 #define SUB_PWR     0x55
