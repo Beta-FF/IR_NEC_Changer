@@ -10,9 +10,9 @@
 #include "ButtonFF.h"
 #include "MatrixFF.h"
 
-#define IR_TX_PIN   4
-#define IR_RX_PIN   3
-#define GND_PIN     11
+#define IR_TX_PIN       4
+#define IR_RX_PIN       3
+#define GND_PIN         11
 #define IR_SUB_ADDR     0xEF00
 #define IR_MP3_ADDR     0x00
 #define TEXT_DELAY      30
@@ -325,12 +325,11 @@ void print_rx_code()
 void power_on() {
     uint8_t tx_delay = 50;
     //irtx.send16Bit_noModulation(0xA503, 0x22);
-	irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_PWR);//send_IR_command(SUB_PWR); // TODO написать синхронизацию по светодиоду
+	irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_PWR);
 	delay(tx_delay);
-	irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_STEREO);//send_IR_command(SUB_STEREO);
-	mode = stereo;
+	irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_STEREO);
 	delay(tx_delay);
-	irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_21CH);//send_IR_command(SUB_21CH);
+	irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_21CH);
 	delay(tx_delay);
 
     uint8_t cmnd_cnt = 10;
@@ -385,8 +384,7 @@ void setup() {
     matrix.write_reg(REG_LIGHTING_EFFECT, 0b00001000); // 0 [NC]; 000 [Audio Gain Selection] - off; 1000 [Current Setting] - 5mA
     matrix.clear();
     set_pgm_string(str_hello);
-    //irtx.send(0x00, 0xA6); // wtf is this?
-    //irtx.send16Bit_noModulation(0xA503, 0x22); // wtf is this?
+    //irtx.send16Bit_noModulation(0xA503, 0x22); // ???
     
 }
 
@@ -394,7 +392,7 @@ void loop()
 {
     if(raw_code_en) { if(irrx.isDecoded()) print_rx_code(); }
     else            { if(irrx.isDecoded()) handler_ir_command(); }
-    if(matrixTask.ready()) matrix_handler(); //draw text
+    if(matrixTask.ready()) matrix_handler();
     if(buttonTask.ready()) button_handler();
 }
 
