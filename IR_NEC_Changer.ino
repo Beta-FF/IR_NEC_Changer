@@ -18,8 +18,8 @@
 #define TEXT_DELAY      30
 
 enum inputs {
-    stereo,
     dvd,
+    stereo,
     aux1,
     aux2,
     input_end
@@ -106,7 +106,6 @@ bool raw_code_en = false;
 uint8_t raw_code_out_cnt = 0;
 
 void ir_Isr() {
-    if(irtx.busy) return;
     irrx.tick();
 }
 
@@ -226,28 +225,28 @@ uint8_t ch_handler()
 void handler_ir_command()
 {
     if(irrx.readAddress() != IR_MP3_ADDR) return;
-    delay(5);
-    switch (irrx.readCommand()) {
+    switch (irrx.readCommand())
+    {
         case MP3_PWR:   
-            irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_PWR);
+            irtx.send16Bit_no38(IR_SUB_ADDR, SUB_PWR);
             set_pgm_string(str_power);
             break;
         case MP3_MUTE:
-            irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_MUTE);
+            irtx.send16Bit_no38(IR_SUB_ADDR, SUB_MUTE);
             set_pgm_string(str_mute);
             break;
         case MP3_PLAY:
-            irtx.send16Bit_noModulation(IR_SUB_ADDR, input_handler());
+            irtx.send16Bit_no38(IR_SUB_ADDR, input_handler());
             break;
         case MP3_PREV:
-            irtx.send16Bit_noModulation(IR_SUB_ADDR, ch_handler());
+            irtx.send16Bit_no38(IR_SUB_ADDR, ch_handler());
             break;
         case MP3_NEXT:
-            irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_3D);
+            irtx.send16Bit_no38(IR_SUB_ADDR, SUB_3D);
             set_pgm_string(str_3d);
             break;
         case MP3_PLUS:
-            irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_VOL_P);
+            irtx.send16Bit_no38(IR_SUB_ADDR, SUB_VOL_P);
             set_pgm_string(str_vol_p);
             break;
         case MP3_0:
@@ -259,7 +258,7 @@ void handler_ir_command()
             set_pgm_string(str_bass);
             break;
         case MP3_SCAN:
-            irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_VOL_M); 
+            irtx.send16Bit_no38(IR_SUB_ADDR, SUB_VOL_M); 
             set_pgm_string(str_vol_m);
             break;
         case MP3_1:
@@ -283,13 +282,13 @@ void handler_ir_command()
             set_pgm_string(str_raw_on);
             break;
         case MP3_7:
-            irtx.send16Bit_noModulation(IR_SUB_ADDR, minus_handler());
+            irtx.send16Bit_no38(IR_SUB_ADDR, minus_handler());
             break;
         case MP3_8:
-            irtx.send16Bit_noModulation(IR_SUB_ADDR, plus_handler());
+            irtx.send16Bit_no38(IR_SUB_ADDR, plus_handler());
             break;
         case MP3_9:
-            irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_RST); 
+            irtx.send16Bit_no38(IR_SUB_ADDR, SUB_RST); 
             set_pgm_string(str_reset);
             break;
     }
@@ -324,22 +323,22 @@ void print_rx_code()
 
 void power_on() {
     uint8_t tx_delay = 50;
-    //irtx.send16Bit_noModulation(0xA503, 0x22);
-	irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_PWR);
+    //irtx.send16Bit_no38(0xA503, 0x22);
+	irtx.send16Bit_no38(IR_SUB_ADDR, SUB_PWR);
 	delay(tx_delay);
-	irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_STEREO);
+	irtx.send16Bit_no38(IR_SUB_ADDR, SUB_STEREO);
 	delay(tx_delay);
-	irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_21CH);
+	irtx.send16Bit_no38(IR_SUB_ADDR, SUB_21CH);
 	delay(tx_delay);
 
     uint8_t cmnd_cnt = 10;
     while(cmnd_cnt--) { // volume preset
-        irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_VOL_P);
+        irtx.send16Bit_no38(IR_SUB_ADDR, SUB_VOL_P);
         delay(tx_delay);
     }
     cmnd_cnt = 4;
     while(cmnd_cnt--) { // sub preset
-        irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_SW_M);
+        irtx.send16Bit_no38(IR_SUB_ADDR, SUB_SW_M);
         delay(tx_delay);
     }
 }
@@ -351,40 +350,40 @@ void button_handler()
 
     if(btn_power.release()) 
     {
-        irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_PWR);
+        irtx.send16Bit_no38(IR_SUB_ADDR, SUB_PWR);
         set_pgm_string(str_power);
     }
     if(btn_vol_p.read() == LOW) 
     {
-        irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_VOL_P);
+        irtx.send16Bit_no38(IR_SUB_ADDR, SUB_VOL_P);
         set_pgm_string(str_vol_p);
     }
     if(btn_vol_m.read() == LOW) 
     {
-        irtx.send16Bit_noModulation(IR_SUB_ADDR, SUB_VOL_M);
+        irtx.send16Bit_no38(IR_SUB_ADDR, SUB_VOL_M);
         set_pgm_string(str_vol_m);
     }
     if(btn_input.release()) 
     {
-        irtx.send16Bit_noModulation(IR_SUB_ADDR, input_handler());
+        irtx.send16Bit_no38(IR_SUB_ADDR, input_handler());
     }
 }
 
 void setup() {
-    //pinMode(LED_BUILTIN, OUTPUT);
-    //digitalWrite(LED_BUILTIN, LOW);
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, LOW);
     pinMode(IR_TX_PIN, OUTPUT);
     digitalWrite(IR_TX_PIN, HIGH);
     pinMode(GND_PIN, OUTPUT);
     digitalWrite(GND_PIN, LOW);
-    delay(500);
+    delay(1000);
     power_on();
     attachInterrupt(1, ir_Isr, FALLING);
     TinyI2C.init();
-    matrix.write_reg(REG_LIGHTING_EFFECT, 0b00001000); // 0 [NC]; 000 [Audio Gain Selection] - off; 1000 [Current Setting] - 5mA
+    matrix.write_reg(REG_LIGHTING_EFFECT, 0b00001001); // 0 [NC]; 000 [Audio Gain Selection] - off; 1000 [Current Setting] - 5mA
     matrix.clear();
     set_pgm_string(str_hello);
-    //irtx.send16Bit_noModulation(0xA503, 0x22); // ???
+    //irtx.send16Bit_no38(0xA503, 0x22); // ???
     
 }
 
@@ -392,6 +391,7 @@ void loop()
 {
     if(raw_code_en) { if(irrx.isDecoded()) print_rx_code(); }
     else            { if(irrx.isDecoded()) handler_ir_command(); }
+    if(irrx.isRepeated()) irtx.sendRepeat_no38();
     if(matrixTask.ready()) matrix_handler();
     if(buttonTask.ready()) button_handler();
 }

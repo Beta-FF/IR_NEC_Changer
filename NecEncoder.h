@@ -29,16 +29,14 @@ public:
         pulse38(562);
     }
 
-    void send16Bit_noModulation(uint16_t addr, uint8_t cmd) {
-        busy = true;
-        pulse_noModulation(9000);//pulse38(9000);
+    void send16Bit_no38(uint16_t addr, uint8_t cmd) {
+        pulse_no38(9000);//pulse38(9000);
         delayMicroseconds(4500);
-        sendData_noModulation(addr & 0xFF);
-        sendData_noModulation((addr >> 8) & 0xFF);
-        sendData_noModulation(cmd);
-        sendData_noModulation(~cmd);
-        pulse_noModulation(562);
-        busy = false;
+        sendData_no38(addr & 0xFF);
+        sendData_no38((addr >> 8) & 0xFF);
+        sendData_no38(cmd);
+        sendData_no38(~cmd);
+        pulse_no38(562);
     }
 
     void sendRepeat() {
@@ -47,9 +45,14 @@ public:
         pulse38(562);
     }
 
-    bool busy = false;
+    void sendRepeat_no38() {
+        pulse_no38(9000);
+        delayMicroseconds(2250);
+        pulse_no38(562);
+    }
+
 private:
-    void pulse_noModulation(uint16_t dur_us)
+    void pulse_no38(uint16_t dur_us)
     {
         digitalWrite(_pin, LOW);
         delayMicroseconds(dur_us);
@@ -76,10 +79,10 @@ private:
         }
     }
 
-    void sendData_noModulation(uint8_t data) {
+    void sendData_no38(uint8_t data) {
         int i = 8;
         while (i--) {
-            pulse_noModulation(562);
+            pulse_no38(562);
             if (data & 0x01) delayMicroseconds(1687);
             else delayMicroseconds(562);
             data >>= 1;

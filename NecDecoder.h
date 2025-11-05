@@ -24,7 +24,7 @@
 
 #define _NEC_TOLERANCE 150      // допуск high/low, мкс
 #define _NEC_TOLERANCE2 1500    // допуск start/repeat, мкс
-#define _NEC_SKIP_REPEAT 2      // пропуск первых повторов, шт
+#define _NEC_SKIP_REPEAT 0      // пропуск первых повторов, шт
 
 // Тайминги NEC, мкс
 #define _NEC_HIGH_BIT 	2250
